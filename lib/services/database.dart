@@ -10,32 +10,32 @@ class DatabaseService {
   final CollectionReference brewCollection =
       FirebaseFirestore.instance.collection('brews');
 
-  Future updateUserData(String name, String sugarCount, int strength) async =>
-      await brewCollection.doc(uid).set({
-        'name': name,
-        'strength': strength,
-        'sugarCount': sugarCount,
-      });
+  Future updateUserData(Brew brew) async =>
+      await brewCollection.doc(uid).set(brew.toJson());
 
-  BrewUserData _userDataFromSnapshot(DocumentSnapshot snapshot) => BrewUserData(
-      uid: uid,
-      brew: Brew(
-        name: snapshot.get('name'),
-        strength: snapshot.get('strength'),
-        sugarCount: snapshot.get('sugarCount'),
-      ));
-
-  List<Brew> _brewListFromSnapshot(QuerySnapshot snapshot) => snapshot.docs
-      .map((doc) => Brew(
-            name: doc.get('name'),
-            strength: doc.get('strength'),
-            sugarCount: doc.get('sugarCount'),
-          ))
-      .toList();
-
-  Stream<BrewUserData> get userData =>
+  BrewUserData? _userDataFromSnapshot(DocumentSnapshot snapshot) {
+    try {
+      return BrewUserData(
+        uid: uid,
+        brew: Brew.fromJson(snapshot.data() as dynamic),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+  Stream<BrewUserData?> get userData =>
       brewCollection.doc(uid).snapshots().map(_userDataFromSnapshot);
 
-  Stream<List<Brew>> get brews =>
-      brewCollection.snapshots().map(_brewListFromSnapshot);
+  List<Brew>? _brewListFromSnapshot(QuerySnapshot snapshot) {
+    try {
+      return snapshot.docs
+          .map((doc) => Brew.fromJson(doc.data() as dynamic))
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
+  Stream<List<Brew>?> get brews {
+    return brewCollection.snapshots().map(_brewListFromSnapshot);
+  }
 }

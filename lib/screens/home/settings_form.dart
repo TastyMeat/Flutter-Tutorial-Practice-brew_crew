@@ -1,9 +1,11 @@
-import 'package:brew_crew/models/brew_user.dart';
-import 'package:brew_crew/services/database.dart';
-import 'package:brew_crew/shared/constants.dart';
-import 'package:brew_crew/shared/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '/models/brew.dart';
+import '/models/brew_user.dart';
+import '/services/database.dart';
+import '/shared/constants.dart';
+import '/shared/loading.dart';
 
 class SettingsForm extends StatefulWidget {
   const SettingsForm({super.key});
@@ -16,19 +18,19 @@ class _SettingsFormState extends State<SettingsForm> {
   final _formKey = GlobalKey<FormState>();
   final List<String> sugarOptions = ['0', '1', '2', '3', '4'];
 
-  String? _currentName;
-  int? _currentStrength;
-  String? _currentSugarCount;
+  Brew? _brew;
 
   @override
-  Widget build(BuildContext context) => StreamBuilder<BrewUserData>(
+  Widget build(BuildContext context) => StreamBuilder<BrewUserData?>(
       stream: DatabaseService(uid: Provider.of<BrewUser>(context).uid).userData,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Loading();
         }
 
-        BrewUserData? brewUserData = snapshot.data;
+        BrewUserData brewUserData = snapshot.data!;
+        Brew brew = _brew ?? brewUserData.brew.copyWith();
+
         return Form(
           key: _formKey,
           child: Column(
@@ -39,26 +41,26 @@ class _SettingsFormState extends State<SettingsForm> {
               ),
               const SizedBox(height: 20.0),
               TextFormField(
-                initialValue: brewUserData!.brew.name,
+                initialValue: brew.name,
                 decoration: textInputDecoration,
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter a name' : null,
-                onChanged: (value) => setState(() => _currentName = value),
+                onChanged: (value) =>
+                    setState(() => _brew = brew.copyWith(name: value)),
               ),
               const SizedBox(height: 20.0),
               Slider(
-                value:
-                    (_currentStrength ?? brewUserData.brew.strength).toDouble(),
+                value: brew.strength.toDouble(),
                 min: 100.0,
                 max: 900.0,
                 divisions: 8,
-                activeColor: Colors.brown[_currentStrength ?? 100],
-                inactiveColor: Colors.brown[_currentStrength ?? 100],
-                onChanged: (value) =>
-                    setState(() => _currentStrength = value.round()),
+                activeColor: Colors.brown[brew.strength],
+                inactiveColor: Colors.brown[brew.strength],
+                onChanged: (value) => setState(
+                    () => _brew = brew.copyWith(strength: value.toInt())),
               ),
               DropdownButtonFormField(
-                value: _currentSugarCount ?? brewUserData.brew.sugarCount,
+                value: brew.sugarCount,
                 decoration: textInputDecoration,
                 items: sugarOptions
                     .map((sugarCount) => DropdownMenuItem(
@@ -66,8 +68,8 @@ class _SettingsFormState extends State<SettingsForm> {
                           child: Text('$sugarCount sugar(s)'),
                         ))
                     .toList(),
-                onChanged: (value) =>
-                    setState(() => _currentSugarCount = value),
+                onChanged: (value) => setState(
+                    () => _brew = brew.copyWith(sugarCount: value ?? '0')),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -78,11 +80,8 @@ class _SettingsFormState extends State<SettingsForm> {
                 ),
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    await DatabaseService(uid: brewUserData.uid).updateUserData(
-                      _currentName ?? brewUserData.brew.name,
-                      _currentSugarCount ?? brewUserData.brew.sugarCount,
-                      _currentStrength ?? brewUserData.brew.strength,
-                    );
+                    await DatabaseService(uid: brewUserData.uid)
+                        .updateUserData(brew);
                     if (mounted) Navigator.pop(context);
                   }
                 },

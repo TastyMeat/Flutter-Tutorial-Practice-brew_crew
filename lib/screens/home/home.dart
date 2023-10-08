@@ -1,16 +1,14 @@
 import 'package:brew_crew/models/brew.dart';
 import 'package:brew_crew/models/brew_user.dart';
+import 'package:brew_crew/screens/home/brew_drawer.dart';
 import 'package:brew_crew/screens/home/brew_list.dart';
 import 'package:brew_crew/screens/home/settings_form.dart';
-import 'package:brew_crew/services/auth_service.dart';
 import 'package:brew_crew/services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatelessWidget {
-  Home({super.key});
-
-  final AuthService _authService = AuthService();
+  const Home({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +31,6 @@ class Home extends StatelessWidget {
           title: const Text('Brew Crew'),
           backgroundColor: Colors.brown.shade400,
           elevation: 10.0,
-          actions: [
-            TextButton.icon(
-              icon: const Icon(Icons.person),
-              label: const Text("Log Out"),
-              onPressed: () async => await _authService.signOut(),
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.settings),
-              label: const Text('settings'),
-              onPressed: showSettingsPanel,
-            ),
-          ],
         ),
         body: Container(
           decoration: const BoxDecoration(
@@ -55,6 +41,14 @@ class Home extends StatelessWidget {
           ),
           child: const BrewList(),
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: showSettingsPanel,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10))),
+          backgroundColor: Colors.pink.shade400,
+          child: const Icon(Icons.settings),
+        ),
+        drawer: BrewDrawer(),
       ),
     );
   }
